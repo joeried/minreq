@@ -293,11 +293,23 @@ impl Request {
     }
 
     fn get_http_head(&self) -> String {
+        let host_parts: Vec<&str> = self.host.split(':').collect();
+        let host_name = host_parts[0];
+        let host_port = host_parts[1];
+
+        let host_header;
+        // Don't include default port in Host
+        if (host_port == "443" && self.https) || (host_port == "80" && !self.https) {
+            host_header = host_name;
+        } else {
+            host_header = &self.host;
+        }
+
         let mut http = String::with_capacity(32);
         // Add the request line and the "Host" header
         http += &format!(
             "{} {} HTTP/1.1\r\nHost: {}\r\n",
-            self.method, self.resource, self.host
+            self.method, self.resource, host_header
         );
         // Add other headers
         for (k, v) in &self.headers {
